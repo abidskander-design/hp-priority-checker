@@ -1,4 +1,4 @@
-"""Generate structured natural-language explanations via NVIDIA NIM (nemotron-49b)."""
+"""Generate structured natural-language explanations via NVIDIA NIM (Nemotron)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,12 @@ import os
 from openai import OpenAI
 
 _client: OpenAI | None = None
-MODEL_ID = "nvidia/llama-3.3-nemotron-super-49b-v1"
+
+# The original model (nvidia/llama-3.3-nemotron-super-49b-v1) was retired by
+# NVIDIA on 2026-08-26. Override with NVIDIA_MODEL; set NVIDIA_THINKING=1 for
+# reasoning mode (slower, e.g. with nvidia/nemotron-3-ultra-550b-a55b).
+MODEL_ID = os.environ.get("NVIDIA_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b")
+THINKING = os.environ.get("NVIDIA_THINKING", "0").lower() in ("1", "true", "yes")
 
 
 def _get_client() -> OpenAI:
@@ -111,10 +116,15 @@ def explain(
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user",   "content": user_msg},
             ],
-            max_tokens=420,
+            # Reasoning tokens count against max_tokens, so thinking needs more room
+            max_tokens=3000 if THINKING else 420,
             temperature=0.2,
-            timeout=timeout,
+            timeout=max(timeout, 90.0) if THINKING else timeout,
+            extra_body={"chat_template_kwargs": {"enable_thinking": THINKING}},
         )
-        return resp.choices[0].message.content.strip()
+        content = (resp.choices[0].message.content or "").strip()
+        if not content:
+            return "[LLM explanation unavailable: empty response from model]"
+        return content
     except Exception as exc:  # noqa: BLE001
         return f"[LLM explanation unavailable: {exc}]"

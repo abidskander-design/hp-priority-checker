@@ -97,13 +97,12 @@ function renderResult(d) {
   const thrPct = Math.round((d.threshold_used || 0.5) * 100);
   document.getElementById("thrLine").style.left   = `${thrPct}%`;
 
-  // Meta chips
+  // Meta chips (training-set AUC/MCC are deliberately not shown: they are
+  // in-sample and overstate real performance)
   const chips = document.getElementById("metaChips");
   chips.innerHTML = [
     d.matched_category,
     `thr: ${thrPct}% (${d.threshold_type})`,
-    `train AUC: ${d.train_auc}`,
-    d.train_mcc_gm ? `train MCC: ${d.train_mcc_gm}` : "",
   ].filter(Boolean).map(t =>
     `<span class="meta-chip">${esc(t)}</span>`
   ).join("");

@@ -1,0 +1,13 @@
+services:
+  backend:
+    build: .
+    image: hp-priority-checker
+    ports:
+      # The Chrome extension talks to http://127.0.0.1:5487
+      - "127.0.0.1:5487:5487"
+    environment:
+      # Read from ./.env (see .env.example); empty means "no LLM explanation"
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_MODEL: ${NVIDIA_MODEL:-nvidia/nemotron-3.5-lightning-30b-a3b}
+      NVIDIA_THINKING: ${NVIDIA_THINKING:-0}
+    restart: unless-stopped

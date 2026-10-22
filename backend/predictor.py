@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -66,11 +65,6 @@ def predict(feature_row: dict, project: str, threshold_type: str = "gmean") -> d
 
     # SubmissionFeatureBuilder.transform() expects a DataFrame
     df = pd.DataFrame([feature_row])
-
-    # Add repo src to path so SubmissionFeatureBuilder is importable
-    repo_src = Path(__file__).parent.parent.parent / "review-priority-predictor" / "src"
-    if str(repo_src) not in sys.path:
-        sys.path.insert(0, str(repo_src))
 
     X = builder.transform(df)
     prob = float(model.predict_proba(X)[0, 1])

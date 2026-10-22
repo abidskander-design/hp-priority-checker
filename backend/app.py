@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -12,15 +11,15 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-# Load .env from repo root (contains NVIDIA_API_KEY)
-_REPO_ROOT = Path(__file__).parent.parent.parent / "review-priority-predictor"
-load_dotenv(_REPO_ROOT / ".env")
+# Load NVIDIA_API_KEY from hp-priority-checker/.env, falling back to the
+# research repo's .env (original development layout). Variables already set
+# in the environment (e.g. by docker compose) take precedence.
+_TOOL_ROOT = Path(__file__).parent.parent
+load_dotenv(_TOOL_ROOT / ".env")
+load_dotenv(_TOOL_ROOT.parent / "review-priority-predictor" / ".env")
 
-# Add research repo src to path for SubmissionFeatureBuilder
-_SRC = _REPO_ROOT / "src"
-if str(_SRC) not in sys.path:
-    sys.path.insert(0, str(_SRC))
-
+# SubmissionFeatureBuilder (needed to unpickle the models) is bundled in
+# backend/rp_predict/, which is importable because it sits next to this file.
 from db import init_db, log_prediction, get_history, get_latency_stats, get_recent_prediction  # noqa: E402
 from gerrit_client import fetch_change, extract_change_info              # noqa: E402
 from feature_extractor import build_feature_row                          # noqa: E402
@@ -272,4 +271,5 @@ def health_route():
 if __name__ == "__main__":
     init_db()
     port = int(os.environ.get("HP_CHECKER_PORT", 5487))
-    app.run(host="127.0.0.1", port=port, debug=False)
+    host = os.environ.get("HP_CHECKER_HOST", "127.0.0.1")
+    app.run(host=host, port=port, debug=False)

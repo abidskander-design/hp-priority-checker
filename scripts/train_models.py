@@ -31,8 +31,8 @@ DATA_CSV    = REPO_ROOT / "data" / "processed" / "dataset_with_subjects.csv"
 MODELS_DIR  = TOOL_ROOT / "backend" / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Add repo src to path so we can import SubmissionFeatureBuilder
-sys.path.insert(0, str(REPO_ROOT / "src"))
+# SubmissionFeatureBuilder is bundled in backend/rp_predict/
+sys.path.insert(0, str(TOOL_ROOT / "backend"))
 from rp_predict.features.submission import SubmissionFeatureBuilder  # noqa: E402
 
 # Projects we build models for
@@ -90,6 +90,24 @@ def find_thresholds(y_true: np.ndarray, y_prob: np.ndarray) -> dict:
     return {"gmean": thr_gm, "f05": thr_fp}
 
 
+def make_model(scale_pos_weight: float) -> XGBClassifier:
+    """XGBoost settings shared by training and scripts/evaluate_holdout.py."""
+    # Same hyperparams as in the dynamic eval
+    return XGBClassifier(
+        n_estimators        = 300,
+        max_depth           = 6,
+        learning_rate       = 0.05,
+        subsample           = 0.8,
+        colsample_bytree    = 0.8,
+        scale_pos_weight    = scale_pos_weight,
+        use_label_encoder   = False,
+        eval_metric         = "logloss",
+        random_state        = 42,
+        n_jobs              = -1,
+        verbosity           = 0,
+    )
+
+
 def train_project(project: str, df_project: pd.DataFrame) -> dict:
     short = SHORT[project]
     print(f"\n{'='*60}")
@@ -108,20 +126,7 @@ def train_project(project: str, df_project: pd.DataFrame) -> dict:
     X, y = builder.fit_transform(df_project)
     print(f"  Feature matrix: {X.shape}")
 
-    # XGBoost — same hyperparams as in the dynamic eval
-    model = XGBClassifier(
-        n_estimators        = 300,
-        max_depth           = 6,
-        learning_rate       = 0.05,
-        subsample           = 0.8,
-        colsample_bytree    = 0.8,
-        scale_pos_weight    = spw,
-        use_label_encoder   = False,
-        eval_metric         = "logloss",
-        random_state        = 42,
-        n_jobs              = -1,
-        verbosity           = 0,
-    )
+    model = make_model(spw)
     model.fit(X, y)
 
     y_prob = model.predict_proba(X)[:, 1]
