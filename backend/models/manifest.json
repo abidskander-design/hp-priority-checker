@@ -1,0 +1,59 @@
+{
+  "models": [
+    {
+      "project": "openstack/nova",
+      "short": "nova",
+      "file": "model_nova.joblib",
+      "train_auc": 1.0,
+      "hp_rate": 0.016564518800728838,
+      "thresholds": {
+        "gmean": 0.9302847981452942,
+        "f05": 0.9302847981452942
+      }
+    },
+    {
+      "project": "openstack/neutron",
+      "short": "neutron",
+      "file": "model_neutron.joblib",
+      "train_auc": 0.9997649443781359,
+      "hp_rate": 0.047866805411030174,
+      "thresholds": {
+        "gmean": 0.7145230174064636,
+        "f05": 0.8503293395042419
+      }
+    },
+    {
+      "project": "openstack/cinder",
+      "short": "cinder",
+      "file": "model_cinder.joblib",
+      "train_auc": 0.9998768707652127,
+      "hp_rate": 0.08885448916408668,
+      "thresholds": {
+        "gmean": 0.737675130367279,
+        "f05": 0.8479272723197937
+      }
+    },
+    {
+      "project": "openstack/glance",
+      "short": "glance",
+      "file": "model_glance.joblib",
+      "train_auc": 1.0,
+      "hp_rate": 0.1365556076959174,
+      "thresholds": {
+        "gmean": 0.9382766485214233,
+        "f05": 0.9382766485214233
+      }
+    },
+    {
+      "project": "openstack/designate",
+      "short": "designate",
+      "file": "model_designate.joblib",
+      "train_auc": 1.0,
+      "hp_rate": 0.1325930764206401,
+      "thresholds": {
+        "gmean": 0.879578173160553,
+        "f05": 0.879578173160553
+      }
+    }
+  ]
+}

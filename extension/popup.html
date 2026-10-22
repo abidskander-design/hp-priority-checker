@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HP+ Priority Checker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 400px;
+    min-height: 200px;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+    background: #f8f9fa;
+    color: #202124;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: #1565C0;
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .header .logo { font-size: 20px; }
+  .header h1 { font-size: 14px; font-weight: 600; }
+  .header .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #aaa; margin-left: auto; flex-shrink: 0;
+  }
+  .header .status-dot.ok  { background: #69F0AE; }
+  .header .status-dot.err { background: #FF5252; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    border-bottom: 2px solid #e0e0e0;
+    background: #fff;
+  }
+  .tab {
+    flex: 1; padding: 8px 4px; text-align: center;
+    cursor: pointer; color: #555; font-size: 12px;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+  }
+  .tab.active { color: #1565C0; border-bottom-color: #1565C0; font-weight: 600; }
+
+  /* ── Panels ── */
+  .panel { display: none; padding: 12px 14px; }
+  .panel.active { display: block; }
+
+  /* ── Verdict card ── */
+  .verdict-card {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .verdict-card.hp  { background: #FFEBEE; border-left: 4px solid #C62828; }
+  .verdict-card.ok  { background: #E8F5E9; border-left: 4px solid #2E7D32; }
+  .verdict-card.none { background: #F5F5F5; border-left: 4px solid #9E9E9E; }
+  .verdict-icon { font-size: 24px; }
+  .verdict-label { font-size: 18px; font-weight: 700; }
+  .verdict-prob  { font-size: 12px; color: #555; margin-top: 2px; }
+
+  /* ── Probability bar ── */
+  .prob-bar-wrap { margin-bottom: 10px; }
+  .prob-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-bottom: 3px; }
+  .prob-bar-track {
+    height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden;
+    position: relative;
+  }
+  .prob-bar-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, #2E7D32, #F57F17, #C62828);
+    transition: width 0.4s ease;
+  }
+  .prob-bar-thr {
+    position: absolute; top: -3px; bottom: -3px; width: 2px; background: #333;
+    border-radius: 2px;
+  }
+
+  /* ── Meta info ── */
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .meta-chip {
+    background: #E3F2FD; color: #1565C0; padding: 2px 8px; border-radius: 12px;
+    font-size: 11px;
+  }
+
+  /* ── Section labels ── */
+  .section-label {
+    font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 5px; margin-top: 8px;
+  }
+
+  /* ── LLM explanation (structured) ── */
+  .explanation {
+    background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
+    padding: 10px 12px; font-size: 12px; line-height: 1.6; color: #333;
+    margin-bottom: 10px; min-height: 50px;
+  }
+  .explanation.loading { color: #999; font-style: italic; }
+  .llm-section { margin-bottom: 8px; }
+  .llm-section:last-child { margin-bottom: 0; }
+  .llm-section-title {
+    font-size: 11px; font-weight: 700; color: #1565C0;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 3px;
+  }
+  .llm-section-body { color: #333; }
+  .llm-bullets { margin: 0; padding-left: 16px; }
+  .llm-bullets li { margin-bottom: 2px; }
+
+  /* ── Feature bars ── */
+  .feature-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .feature-row { display: flex; align-items: center; gap: 6px; }
+  .feature-name { width: 160px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #444; }
+  .feature-bar-track { flex: 1; height: 6px; background: #e0e0e0; border-radius: 3px; }
+  .feature-bar-fill  { height: 100%; background: #1565C0; border-radius: 3px; }
+  .feature-imp  { width: 36px; text-align: right; font-size: 10px; color: #666; }
+
+  /* ── Threshold slider ── */
+  .slider-wrap { margin-bottom: 10px; }
+  .slider-row  { display: flex; align-items: center; gap: 8px; }
+  .slider-row input[type=range] { flex: 1; }
+  .slider-val  { width: 36px; text-align: right; font-size: 12px; font-weight: 600; color: #1565C0; }
+  .slider-type-row { display: flex; gap: 6px; margin-top: 6px; }
+  .slider-type-row label { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+  .btn-apply {
+    margin-top: 8px; padding: 5px 14px;
+    background: #1565C0; color: #fff; border: none; border-radius: 4px;
+    cursor: pointer; font-size: 12px;
+  }
+  .btn-apply:hover { background: #0D47A1; }
+
+  /* ── History table ── */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .history-table th { background: #E3F2FD; color: #1565C0; padding: 4px 6px; text-align: left; }
+  .history-table td { padding: 3px 6px; border-bottom: 1px solid #f0f0f0; }
+  .history-table tr:hover td { background: #f9f9f9; }
+  .badge-hp   { background: #FFEBEE; color: #C62828; padding: 1px 5px; border-radius: 4px; font-weight: 600; }
+  .badge-norm { background: #E8F5E9; color: #2E7D32; padding: 1px 5px; border-radius: 4px; }
+
+  /* ── No result ── */
+  .no-result { text-align: center; padding: 24px 16px; color: #888; }
+  .no-result .hint { font-size: 11px; margin-top: 6px; color: #aaa; }
+
+  /* ── Error ── */
+  .error-box { background: #FFEBEE; border-radius: 6px; padding: 10px 12px; color: #C62828; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="logo">🔬</span>
+  <h1>HP+ Priority Checker</h1>
+  <div class="status-dot" id="statusDot" title="Backend status"></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="predict">Prediction</div>
+  <div class="tab" data-tab="risk">Risk Dashboard</div>
+  <div class="tab" data-tab="settings">Settings</div>
+  <div class="tab" data-tab="history">History</div>
+</div>
+
+<!-- ── PREDICTION TAB ── -->
+<div class="panel active" id="tab-predict">
+  <div id="no-result" class="no-result">
+    <div>Navigate to an OpenStack Gerrit change</div>
+    <div class="hint">Supported: nova, neutron, cinder, glance, designate</div>
+  </div>
+  <div id="has-result" style="display:none">
+    <div class="verdict-card none" id="verdictCard">
+      <span class="verdict-icon" id="verdictIcon">—</span>
+      <div>
+        <div class="verdict-label" id="verdictLabel">—</div>
+        <div class="verdict-prob" id="verdictProb"></div>
+      </div>
+    </div>
+
+    <div class="prob-bar-wrap">
+      <div class="prob-bar-label">
+        <span>0%</span><span id="probPct">—</span><span>100%</span>
+      </div>
+      <div class="prob-bar-track">
+        <div class="prob-bar-fill" id="probFill" style="width:0%"></div>
+        <div class="prob-bar-thr" id="thrLine" style="left:50%"></div>
+      </div>
+    </div>
+
+    <div class="meta" id="metaChips"></div>
+
+    <div class="section-label">AI Reasoning</div>
+    <div class="explanation" id="explanationBox">Loading…</div>
+  </div>
+  <div id="error-box" class="error-box" style="display:none"></div>
+</div>
+
+<!-- ── RISK DASHBOARD TAB ── -->
+<div class="panel" id="tab-risk">
+  <div class="section-label">Top Feature Importances</div>
+  <div class="feature-list" id="featureList">
+    <div style="color:#aaa;font-size:12px">No prediction yet</div>
+  </div>
+</div>
+
+<!-- ── SETTINGS TAB ── -->
+<div class="panel" id="tab-settings">
+  <div class="section-label">Decision Threshold</div>
+  <div class="slider-wrap">
+    <div class="slider-row">
+      <span style="font-size:11px;color:#666">0%</span>
+      <input type="range" id="thrSlider" min="0" max="100" value="50" step="1">
+      <span style="font-size:11px;color:#666">100%</span>
+      <span class="slider-val" id="thrVal">50%</span>
+    </div>
+    <div class="slider-type-row">
+      <label><input type="radio" name="thrType" value="gmean" checked> G-mean (balanced)</label>
+      <label><input type="radio" name="thrType" value="f05"> F0.5 (precision)</label>
+      <label><input type="radio" name="thrType" value="custom"> Custom</label>
+    </div>
+    <button class="btn-apply" id="applyThr">Apply & Re-run</button>
+  </div>
+
+  <div class="section-label">Backend</div>
+  <div style="font-size:11px;color:#666;margin-bottom:6px">
+    Local server: <code>http://127.0.0.1:5487</code>
+  </div>
+  <div id="backendStatus" style="font-size:11px;color:#999">Checking…</div>
+</div>
+
+<!-- ── HISTORY TAB ── -->
+<div class="panel" id="tab-history">
+  <div id="historyWrap">
+    <table class="history-table">
+      <thead>
+        <tr><th>Change</th><th>Project</th><th>Verdict</th><th>Prob</th></tr>
+      </thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

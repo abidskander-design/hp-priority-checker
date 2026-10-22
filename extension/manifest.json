@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "HP+ Priority Checker",
+  "version": "1.0.0",
+  "description": "Predicts Review-Priority HP+ labels for OpenStack Gerrit changes using XGBoost + LLM explanations.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://review.opendev.org/*",
+    "http://127.0.0.1:5487/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://review.opendev.org/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "HP+ Priority Checker"
+  },
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

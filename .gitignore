@@ -1,0 +1,10 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# SQLite temp files
+*.db-journal
+
+# Secrets (the NVIDIA API key lives in ../review-priority-predictor/.env)
+.env
