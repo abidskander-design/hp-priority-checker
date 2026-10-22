@@ -163,6 +163,23 @@ together with `backend/models/manifest.json` (thresholds and HP+ rates).
 Running the tool does **not** need the dataset: the trained models and the
 author-profile database are included.
 
+## Evaluation
+
+The `train_auc` values in `backend/models/manifest.json` are in-sample (each
+model is scored on its own training data) and are not a measure of accuracy.
+A held-out, time-aware evaluation of the same pipeline (trained on changes
+before 2024-01-01, tested on all changes from 2024-01-01 on) is in
+[`evaluation/holdout_results.md`](evaluation/holdout_results.md). It can be
+reproduced with the research dataset:
+
+```bash
+python scripts/evaluate_holdout.py
+```
+
+On held-out data, submission-time prediction is weak (mean ROC-AUC 0.59, mean
+MCC 0.09 at the G-mean threshold), so the tool is meant as decision support
+for triage rather than as an automatic gatekeeper.
+
 ## License
 
 Released under the [MIT License](LICENSE).
